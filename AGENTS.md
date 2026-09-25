@@ -56,6 +56,12 @@ BD real, ejecutar SIEMPRE:
     export PATH="$HOME/.local/bin:$PATH"
     python3 -m pytest
 
+## Control de versiones (git)
+- Puntos estables etiquetados con tags: `v1.19` (5efd638, etapa 5) y `v1.20` (f9bc5ea).
+  Rollback a la versión estable anterior: `git reset --hard v1.19`.
+- `.env` e `instance/` son no rastreados (ignorados): ningun `reset` los borra.
+- Tras un hito estable, crear su tag: `git tag vX.Y <commit>` y `git push origin --tags`.
+
 ## Entorno / servidor
 - Instalar dependencias con `pip --break-system-packages` (Python 3.14 del sistema).
 - Levantar el servidor (puerto 5000) con:

@@ -45,7 +45,7 @@ Flujo de una practica de quiz:
       ├─ quality_from_score()       → quality SM-2 (0-5)
       ├─ sm2_review()               → repetitions, EF, interval
       ├─ determine_level()          → level (0-3)
-      └─ v1.11 en adelante: sesion  → session_history (guardado con tudo)
+      └─ v1.11 en adelante: sesion  → session_history (guardado con todo)
             informar: analytics.py (estadisticas) + reporting.py (informe)
 ```
 

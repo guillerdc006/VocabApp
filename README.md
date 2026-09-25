@@ -31,15 +31,20 @@ El usuario presenta una palabra en espanol, escribe su traduccion en ingles y fo
 ## Caracteristicas
 
 | Funcionalidad | Descripcion |
-|---|---|
+|---|---|---|
 | **Quiz interactivo** | Muestra palabra en espanol → el usuario escribe la traduccion en ingles → escribe una oracion |
-| **Verificacion NLP** | spaCy verifica: palabra/frase presente, verbos (VERB + AUX: is/are/was/were/be), minimo 3 tokens |
+| **Direccion inversa** | Selector espanol→ingles (default) o ingles→espanol; la direccion se guarda y alimenta la precision por direccion |
+| **Ayuda al recordar** | Pista siempre visible (con texto por defecto) y boton "No recuerdo / Ver respuesta" que marca la palabra como fallo honesto (`was_revealed`) |
+| **Verificacion NLP** | spaCy (local) con Gemini (IA) opcional: palabra/frase presente e inflexiones, verbos (VERB + AUX), minimo 3 tokens; sugerencias de oracion corregida y presupuesto de tiempo garantizado |
+| **Modo Matcher** | Empareja hasta 10 palabras espanol/ingles; registra actividad sin alterar la curva SM-2 |
 | **Sistema de niveles** | 4 niveles: Nueva, Facil, Media, Dificil — con progresion automatica |
 | **SM-2 Spaced Repetition** | Algoritmo SuperMemo 2: ajusta intervalo, factor de facilidad y proxima revision |
-| **Dashboard** | Resumen: palabras totales, practicadas, precision semanal, pendientes de revision |
-| **CRUD de vocabulario** | Agregar, eliminar, buscar y paginar palabras |
-| **Importar Excel** | Subir archivo `.xlsx` desde el navegador con drag & drop |
-| **Estadisticas** | Palabras mas dificiles, mejor dominadas, historial de sesiones |
+| **Carga de repaso (SM-2)** | Panel de cola sostenible: nuevas/vencidas/atrasadas, ritmo diario, proyeccion y repasos programados a 14 dias |
+| **Dashboard** | Resumen: palabras totales, practicadas, precision semanal, pendientes de revision y carga de repaso |
+| **CRUD de vocabulario** | Agregar, editar, eliminar, buscar y paginar palabras |
+| **Importar / Exportar Excel** | Subir archivo `.xlsx` desde el navegador o CLI; exportar vocabulario + progreso |
+| **Estadisticas** | Palabras mas dificiles/mejor dominadas, historial filtrable, rachas, precision por tipo/direccion/validador, evolucion 30 dias y calendario de actividad 16 semanas |
+| **Informe de progreso** | `/report` con 5 graficos (pandas + matplotlib) y export PDF multipagina `/report/pdf` |
 
 ---
 
