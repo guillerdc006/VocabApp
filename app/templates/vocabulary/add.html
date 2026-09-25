@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Agregar Palabra - VocabApp{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2 class="fw-bold mb-4">Agregar nueva palabra</h2>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="english" class="form-label fw-bold">Palabra en ingles</label>
+                        <input type="text" class="form-control form-control-lg" id="english" name="english"
+                               placeholder="Ej: beautiful" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label for="spanish" class="form-label fw-bold">Traduccion al espanol</label>
+                        <input type="text" class="form-control form-control-lg" id="spanish" name="spanish"
+                               placeholder="Ej: hermoso/a" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="notes" class="form-label fw-bold">Observacion / pista (opcional)</label>
+                        <input type="text" class="form-control" id="notes" name="notes"
+                               placeholder="Ej: se usa con el verbo to be">
+                        <div class="form-text">Se mostrara como pista durante la practica.</div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-plus-circle"></i> Agregar palabra
+                        </button>
+                        <a href="{{ url_for('vocabulary.word_list') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a la lista
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

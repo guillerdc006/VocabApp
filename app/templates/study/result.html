@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Resultado - VocabApp{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        {% if is_correct %}
+        <div class="text-center mb-4">
+            <i class="bi bi-check-circle-fill text-success display-1"></i>
+            <h2 class="fw-bold text-success mt-2">Correcto!</h2>
+        </div>
+        {% else %}
+        <div class="text-center mb-4">
+            <i class="bi bi-x-circle-fill text-danger display-1"></i>
+            <h2 class="fw-bold text-danger mt-2">Incorrecto</h2>
+        </div>
+        {% endif %}
+
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <div class="row">
+                    {% if direction == 'en_to_es' %}
+                    <div class="col-6">
+                        <span class="text-muted">Palabra (ingles):</span>
+                        <h4 class="fw-bold">{{ word.english }}</h4>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted">Respuesta correcta:</span>
+                        <h4 class="fw-bold text-success">{{ word.spanish }}</h4>
+                    </div>
+                    {% else %}
+                    <div class="col-6">
+                        <span class="text-muted">Palabra:</span>
+                        <h4 class="fw-bold">{{ word.spanish }}</h4>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted">Respuesta correcta:</span>
+                        <h4 class="fw-bold text-success">{{ word.english }}</h4>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if was_revealed %}
+                <div class="alert alert-danger py-2 mb-0">
+                    <i class="bi bi-eye-fill"></i>
+                    <strong>Usaste ayuda:</strong> la respuesta fue revelada, por eso la mitad de la palabra cuenta como incorrecta.
+                </div>
+                {% endif %}
+                <hr>
+                <div class="row">
+                    <div class="col-6">
+                        <span class="text-muted">Tu respuesta:</span>
+                        <h5 class="{% if is_correct %}text-success{% else %}text-danger{% endif %}">
+                            {{ user_answer }}
+                        </h5>
+                    </div>
+                    <div class="col-6">
+                        <span class="text-muted">Puntos:</span>
+                        <h5 class="fw-bold">{{ score }}</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-chat-left-text"></i> Oracion
+                {% if validator_source == 'gemini' %}
+                <span class="badge bg-primary ms-1"><i class="bi bi-stars"></i> Validada con IA</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <p class="mb-2 fst-italic">"{{ user_sentence }}"</p>
+                {% if sentence_result.valid %}
+                    <span class="badge bg-success"><i class="bi bi-check"></i> Oracion valida</span>
+                {% else %}
+                    <span class="badge bg-warning"><i class="bi bi-exclamation-triangle"></i> {{ sentence_result.details }}</span>
+                {% endif %}
+                {% if sentence_suggestion %}
+                <div class="alert alert-info mt-3 mb-0">
+                    <strong>Sugerencia:</strong> {{ sentence_suggestion }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="d-grid gap-2">
+            <a href="{{ url_for('study.quiz') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-arrow-right"></i> Siguiente palabra
+            </a>
+            <a href="{{ url_for('study.stats') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-bar-chart"></i> Ver estadisticas
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

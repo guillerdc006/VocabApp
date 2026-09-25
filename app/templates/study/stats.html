@@ -1,0 +1,534 @@
+{% extends "base.html" %}
+{% block title %}Estadisticas - VocabApp{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold">Estadisticas</h2>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-book text-primary stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ total_words }}</h3>
+                <p class="text-muted mb-0">Palabras totales</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-check-circle text-success stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ total_practiced }}</h3>
+                <p class="text-muted mb-0">Practicadas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-bullseye text-warning stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ overall_accuracy }}%</h3>
+                <p class="text-muted mb-0">Precision general</p>
+                <small class="text-muted"><i class="bi bi-eye"></i> Practicas con ayuda: {{ practices_with_help }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-fire text-danger stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ current_streak }}
+                    {% if current_streak == 1 %}dia{% else %}dias{% endif %}</h3>
+                <p class="text-muted mb-0">Racha actual</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-trophy text-warning stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ best_streak }}
+                    {% if best_streak == 1 %}dia{% else %}dias{% endif %}</h3>
+                <p class="text-muted mb-0">Mejor racha</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-check text-info stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ active_days }}
+                    {% if active_days == 1 %}dia{% else %}dias{% endif %}</h3>
+                <p class="text-muted mb-0">Dias activos</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-bar-chart text-primary"></i> Precision por tipo de sesion
+            </div>
+            <div class="card-body">
+                {% if accuracy_by_type %}
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr>
+                            <td>Quiz</td>
+                            <td class="text-end fw-bold">{{ accuracy_by_type.get('quiz', 0) }}%</td>
+                        </tr>
+                        <tr>
+                            <td>Matcher</td>
+                            <td class="text-end fw-bold">{{ accuracy_by_type.get('match', 0) }}%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center mb-0">Sin datos aun.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-arrow-left-right text-primary"></i> Precision por direccion
+            </div>
+            <div class="card-body">
+                {% if accuracy_by_direction %}
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr>
+                            <td>Espanol al ingles</td>
+                            <td class="text-end fw-bold">{{ accuracy_by_direction.get('es_to_en', 0) }}%</td>
+                        </tr>
+                        <tr>
+                            <td>Ingles al espanol</td>
+                            <td class="text-end fw-bold">{{ accuracy_by_direction.get('en_to_es', 0) }}%</td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center mb-0">Sin datos aun.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-cpu text-primary"></i> Precision por validador
+            </div>
+            <div class="card-body">
+                {% if accuracy_by_validator %}
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr>
+                            <td>IA (Gemini)</td>
+                            <td class="text-end fw-bold">{{ accuracy_by_validator.get('gemini', 0) }}%
+                                <span class="text-muted small">({{ validator_counts.get('gemini', 0) }})</span></td>
+                        </tr>
+                        <tr>
+                            <td>Local (spaCy)</td>
+                            <td class="text-end fw-bold">{{ accuracy_by_validator.get('spacy', 0) }}%
+                                <span class="text-muted small">({{ validator_counts.get('spacy', 0) }})</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted text-center mb-0">Sin datos aun.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold">
+        <i class="bi bi-clipboard-data text-danger"></i> Carga de repaso (SM-2)
+        {% if need_more %}
+        <span class="badge bg-warning text-dark ms-2">Considera aumentar la practica</span>
+        {% else %}
+        <span class="badge bg-success ms-2">Bajo control</span>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <div class="row g-4">
+            <div class="col-lg-3">
+                <div class="d-flex gap-4 flex-wrap">
+                    <div class="text-center">
+                        <h3 class="fw-bold mb-0">{{ new_pending }}</h3>
+                        <span class="text-muted small">Nuevas</span>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="fw-bold mb-0 text-danger">{{ vencidas_total }}</h3>
+                        <span class="text-muted small">Vencidas (hoy + atrasadas)</span>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="fw-bold mb-0">{{ backlog }}</h3>
+                        <span class="text-muted small">Cola total</span>
+                    </div>
+                </div>
+                <p class="small text-muted mt-3 mb-0">
+                    Sin tu practica de hoy la cola seria {{ backlog_ayer }}; hoy despejaste
+                    {{ practiced_today }} palabras.
+                    {% if days_to_clear %}
+                    A tu ritmo de {{ rate_avg }}/dia, la despejas en ~{{ days_to_clear }} dias.
+                    {% else %}
+                    Aun no hay ritmo de practica registrado.
+                    {% endif %}
+                    {{ prompt }}
+                </p>
+            </div>
+            <div class="col-lg-4">
+                <span class="text-muted small fw-bold">Repasos programados (14 dias)</span>
+                <canvas id="reviewChart" height="120"></canvas>
+            </div>
+            <div class="col-lg-5">
+                <span class="text-muted small fw-bold">Despejadas por dia (7 dias)</span>
+                <canvas id="rateChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-graph-up text-primary"></i> Evolucion de precision (30 dias)
+            </div>
+            <div class="card-body">
+                <canvas id="accuracyChart" height="160"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-calendar3 text-success"></i> Calendario de actividad ({{ weeks|length }} semanas)
+            </div>
+            <div class="card-body">
+                {% if weeks %}
+                <div class="table-responsive">
+                    <table class="mb-2" style="border-collapse: separate; border-spacing: 3px;">
+                        <tbody>
+                            {% for dow in range(7) %}
+                            <tr>
+                                <td class="text-muted small text-end pe-2">{{ ['L','M','X','J','V','S','D'][dow] }}</td>
+                                {% for week in weeks %}
+                                {% set day = week[dow] %}
+                                <td style="background: {{ {
+                                    0: '#ebedf0',
+                                    1: '#9be9a8',
+                                    2: '#40c463',
+                                    3: '#30a14e',
+                                    4: '#216e39'
+                                }[day.level] if not day.future else '#f8f9fa' }}; width:14px; height:14px; padding:0; {% if day.future %}opacity:.25{% endif %}"
+                                    title="{{ day.iso }}{% if day.count %}: {{ day.count }} sesiones{% endif %}"></td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex align-items-center gap-1 small text-muted">
+                    <span>Menos</span>
+                    {% for color in ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'] %}
+                    <span style="display:inline-block;width:12px;height:12px;background:{{ color }};"></span>
+                    {% endfor %}
+                    <span>Mas</span>
+                </div>
+                {% else %}
+                <p class="text-muted text-center mb-0">Sin datos aun.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-exclamation-triangle text-danger"></i> Palabras mas dificiles
+            </div>
+            <div class="card-body">
+                {% if hardest_words %}
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Palabra</th>
+                                <th>Espanol</th>
+                                <th>Practicadas</th>
+                                <th>Correctas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for word, stats in hardest_words %}
+                            <tr>
+                                <td class="fw-bold">{{ word.english }}</td>
+                                <td>{{ word.spanish }}</td>
+                                <td>{{ stats.times_practiced }}</td>
+                                <td>{{ stats.times_correct }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center mb-0">Aun no hay datos suficientes.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-star text-success"></i> Palabras mejor dominadas
+            </div>
+            <div class="card-body">
+                {% if easiest_words %}
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Palabra</th>
+                                <th>Espanol</th>
+                                <th>Practicadas</th>
+                                <th>Correctas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for word, stats in easiest_words %}
+                            <tr>
+                                <td class="fw-bold">{{ word.english }}</td>
+                                <td>{{ word.spanish }}</td>
+                                <td>{{ stats.times_practiced }}</td>
+                                <td>{{ stats.times_correct }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center mb-0">Aun no hay datos suficientes.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-clock-history"></i> Historial completo
+            </div>
+            <div class="card-body">
+                <form method="GET" class="row g-2 mb-3 align-items-end">
+                    <input type="hidden" name="page" value="1">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold mb-1">Buscar palabra</label>
+                        <input type="text" class="form-control form-control-sm" name="word" value="{{ word }}"
+                               placeholder="ingles o espanol">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold mb-1">Resultado</label>
+                        <select class="form-select form-select-sm" name="correct">
+                            <option value="" {% if not correct %}selected{% endif %}>Todos</option>
+                            <option value="yes" {% if correct == 'yes' %}selected{% endif %}>Correctas</option>
+                            <option value="no" {% if correct == 'no' %}selected{% endif %}>Incorrectas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold mb-1">Tipo de sesion</label>
+                        <select class="form-select form-select-sm" name="session_type">
+                            <option value="" {% if not session_type %}selected{% endif %}>Todos</option>
+                            <option value="quiz" {% if session_type == 'quiz' %}selected{% endif %}>Quiz</option>
+                            <option value="match" {% if session_type == 'match' %}selected{% endif %}>Matcher</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold mb-1">Desde</label>
+                        <input type="date" class="form-control form-control-sm" name="date_from" value="{{ date_from }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold mb-1">Hasta</label>
+                        <input type="date" class="form-control form-control-sm" name="date_to" value="{{ date_to }}">
+                    </div>
+                    <div class="col-md-1 d-grid gap-1">
+                        <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-funnel"></i></button>
+                        <a href="{{ url_for('study.stats') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-x"></i>
+                        </a>
+                    </div>
+                </form>
+
+                {% if pagination.items %}
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Palabra</th>
+                                <th>Tu respuesta</th>
+                                <th>Correcta</th>
+                                <th>Oracion</th>
+                                <th>Puntos</th>
+                                <th>Tipo</th>
+                                <th>Validador</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for h, w in pagination.items %}
+                            <tr>
+                                <td class="text-muted text-nowrap">{{ h.created_at.strftime('%d/%m %H:%M') }}</td>
+                                <td class="fw-bold">{{ w.english }}</td>
+                                <td>{{ h.english_answer }}</td>
+                                <td>
+                                    {% if h.is_correct %}
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                    {% else %}
+                                        <i class="bi bi-x-circle-fill text-danger"></i>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    {{ h.sentence or '-' }}
+                                </td>
+                                <td class="fw-bold">{{ h.score }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ h.session_type }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ h.validator_source }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if pagination.pages > 1 %}
+                <nav class="mt-3">
+                    <ul class="pagination pagination-sm justify-content-center">
+                        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('study.stats', page=pagination.prev_num, **filter_params) }}">Anterior</a>
+                        </li>
+                        {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if p %}
+                                <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('study.stats', page=p, **filter_params) }}">{{ p }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('study.stats', page=pagination.next_num, **filter_params) }}">Siguiente</a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+
+                {% else %}
+                <p class="text-muted text-center mb-0">
+                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                    No hay sesiones con los filtros aplicados.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+    const evolution = {{ evolution | tojson }};
+    const chartCtx = document.getElementById('accuracyChart');
+    if (chartCtx) {
+        const labels = evolution.quiz.map(d => d.label.slice(5));
+        const datasets = [];
+        const typeColors = {
+            quiz: { line: '#30a14e', fill: 'rgba(48,161,78,.15)' },
+            match: { line: '#1d4ed8', fill: 'rgba(29,78,216,.15)' }
+        };
+        ['quiz', 'match'].forEach(function (type) {
+            const series = evolution[type];
+            if (!series || !series.some(d => d.total > 0)) return;
+            const colors = typeColors[type];
+            datasets.push({
+                label: type === 'quiz' ? 'Quiz %' : 'Matcher %',
+                data: series.map(d => d.accuracy),
+                borderColor: colors.line,
+                backgroundColor: colors.fill,
+                fill: true,
+                tension: .3,
+                spanGaps: true
+            });
+        });
+        new Chart(chartCtx, {
+            type: 'line',
+            data: { labels: labels, datasets: datasets },
+            options: {
+                responsive: true,
+                plugins: { tooltip: { callbacks: {
+                    label: function (item) {
+                        const series = evolution[item.datasetIndex === 0 ? 'quiz' : 'match'];
+                        const day = series[item.dataIndex];
+                        return day.accuracy == null ? 'Sin practica' : day.accuracy + '% (' + day.total + ' sesiones)';
+                    }
+                } } },
+                scales: { y: { min: 0, max: 100 } }
+            }
+        });
+    }
+
+    const skyline = {{ skyline | tojson }};
+    const reviewCtx = document.getElementById('reviewChart');
+    if (reviewCtx) {
+        new Chart(reviewCtx, {
+            type: 'bar',
+            data: {
+                labels: skyline.map(d => d.label.slice(5)),
+                datasets: [{
+                    label: 'Repasos',
+                    data: skyline.map(d => d.count),
+                    backgroundColor: '#ffc107'
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+    }
+
+    const rateSeries = {{ rate_series | tojson }};
+    const rateCtx = document.getElementById('rateChart');
+    if (rateCtx) {
+        new Chart(rateCtx, {
+            type: 'bar',
+            data: {
+                labels: rateSeries.map(d => d.label.slice(5)),
+                datasets: [{
+                    label: 'Despejadas',
+                    data: rateSeries.map(d => d.count),
+                    backgroundColor: '#30a14e'
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+    }
+</script>
+{% endblock %}

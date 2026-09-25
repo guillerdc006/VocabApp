@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Matcher - VocabApp{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold"><i class="bi bi-grid-3x3-gap"></i> Matcher de vocabulario</h2>
+        <p class="text-muted mb-0">
+            Empareja cada palabra espanol con su traduccion al ingles. Completa las {{ left|length }}
+            parejas para guardar tu actividad.
+        </p>
+    </div>
+</div>
+
+{% if left %}
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-globe2 text-primary"></i> Espanol
+            </div>
+            <div class="card-body">
+                <div class="list-group" id="leftCol">
+                    {% for w in left %}
+                    <button type="button" class="list-group-item list-group-item-action text-start" data-id="{{ w.id }}">
+                        {{ w.spanish }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-translate text-success"></i> Ingles
+            </div>
+            <div class="card-body">
+                <div class="list-group" id="rightCol">
+                    {% for w in right %}
+                    <button type="button" class="list-group-item list-group-item-action text-start" data-id="{{ w.id }}">
+                        {{ w.english }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <span id="progress" class="text-muted">0 / {{ left|length }} parejas</span>
+    <a href="{{ url_for('study.match') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-repeat"></i> Nueva ronda
+    </a>
+</div>
+
+<form id="matchForm" method="POST" action="{{ url_for('study.match_complete') }}" class="d-none">
+    <input type="hidden" name="ids" id="matchedIds">
+</form>
+{% else %}
+<p class="text-muted">Aun no hay palabras en el vocabulario.</p>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        var leftCol = document.getElementById('leftCol');
+        if (!leftCol) return;
+        var rightCol = document.getElementById('rightCol');
+        var matchedIds = document.getElementById('matchedIds');
+        var progress = document.getElementById('progress');
+        var total = leftCol.querySelectorAll('.list-group-item').length;
+        var selected = null;
+        var done = 0;
+
+        function markMatched(btn) {
+            btn.classList.remove('active', 'list-group-item-danger');
+            btn.classList.add('list-group-item-success');
+            btn.disabled = true;
+        }
+
+        function flashWrong(btn) {
+            btn.classList.add('list-group-item-danger');
+            setTimeout(function () { btn.classList.remove('list-group-item-danger'); }, 400);
+        }
+
+        function resetSelection() {
+            if (selected) { selected.classList.remove('active'); selected = null; }
+        }
+
+        function finish() {
+            var ids = [];
+            leftCol.querySelectorAll('.list-group-item-success').forEach(function (b) {
+                ids.push(Number(b.dataset.id));
+            });
+            matchedIds.value = JSON.stringify({ ids: ids });
+            document.getElementById('matchForm').submit();
+        }
+
+        function handleClick(btn) {
+            if (btn.disabled) return;
+            if (!selected) {
+                selected = btn;
+                btn.classList.add('active');
+                return;
+            }
+            if (selected.parentElement === btn.parentElement) {
+                resetSelection();
+                selected = btn;
+                btn.classList.add('active');
+                return;
+            }
+            if (selected.dataset.id === btn.dataset.id) {
+                markMatched(selected);
+                markMatched(btn);
+                done += 1;
+                progress.textContent = done + ' / ' + total + ' parejas';
+                resetSelection();
+                if (done === total) finish();
+            } else {
+                flashWrong(btn);
+                flashWrong(selected);
+                resetSelection();
+            }
+        }
+
+        function bind(container) {
+            container.addEventListener('click', function (e) {
+                var btn = e.target.closest('.list-group-item');
+                if (btn) handleClick(btn);
+            });
+        }
+        bind(leftCol);
+        bind(rightCol);
+    })();
+</script>
+{% endblock %}

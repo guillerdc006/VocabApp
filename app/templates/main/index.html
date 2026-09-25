@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Inicio - VocabApp{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold">Dashboard</h2>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3 col-xl-2">
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-book text-primary stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ total_words }}</h3>
+                <p class="text-muted mb-0">Palabras totales</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl-2">
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-check-circle text-success stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ practiced_words }}</h3>
+                <p class="text-muted mb-0">Palabras practicadas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl-2">
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-chat-dots text-primary stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ total_sessions }}</h3>
+                <p class="text-muted mb-0">Oraciones practicadas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl-2">
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-bullseye text-warning stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ accuracy_week }}%</h3>
+                <p class="text-muted mb-0">Precision (7 dias)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-6 col-xl-2">
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-hourglass-split text-info stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ pending_count }}</h3>
+                <p class="text-muted mb-0">Pendientes para practica</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <span class="fw-bold">Carga de repaso:</span>
+            <span class="badge bg-light text-dark">{{ new_pending_short }} nuevas</span>
+            <span class="badge bg-danger text-white">{{ vencidas_total }} vencidas</span>
+            <span class="badge bg-dark text-white">{{ backlog }} en cola</span>
+            {% if practiced_today %}
+            <span class="small text-muted ms-2">Hoy ya despejaste {{ practiced_today }}</span>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('study.stats') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-clipboard-data"></i> Ver detalle
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-graph-up"></i> Niveles de vocabulario
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span><span class="badge bg-secondary">Nueva</span></span>
+                    <span class="fw-bold">{{ levels[0] }}</span>
+                </div>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar bg-secondary" style="width: {{ (levels[0] / total_words * 100) if total_words > 0 else 0 }}%"></div>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span><span class="badge bg-success">Facil</span></span>
+                    <span class="fw-bold">{{ levels[1] }}</span>
+                </div>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar bg-success" style="width: {{ (levels[1] / total_words * 100) if total_words > 0 else 0 }}%"></div>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span><span class="badge bg-warning">Media</span></span>
+                    <span class="fw-bold">{{ levels[2] }}</span>
+                </div>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar bg-warning" style="width: {{ (levels[2] / total_words * 100) if total_words > 0 else 0 }}%"></div>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span><span class="badge bg-danger">Dificil</span></span>
+                    <span class="fw-bold">{{ levels[3] }}</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-danger" style="width: {{ (levels[3] / total_words * 100) if total_words > 0 else 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-lightning"></i> Acciones rapidas
+            </div>
+            <div class="card-body d-grid gap-3">
+                <a href="{{ url_for('study.quiz') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-play-circle"></i> Practicar ahora
+                </a>
+                <a href="{{ url_for('study.match') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-grid-3x3-gap"></i> Matcher 10x10
+                </a>
+                <a href="{{ url_for('vocabulary.add_word') }}" class="btn btn-outline-success btn-lg">
+                    <i class="bi bi-plus-circle"></i> Agregar palabra
+                </a>
+                <a href="{{ url_for('vocabulary.import_excel') }}" class="btn btn-outline-info btn-lg">
+                    <i class="bi bi-upload"></i> Importar desde Excel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
