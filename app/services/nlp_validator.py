@@ -1,12 +1,19 @@
 import json
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 
 import spacy
 
-from ..config import get_api_key, get_model, get_validator
+from ..config import get_api_key, get_gemini_timeout_ms, get_model, get_validator
 
 _nlp = None
 
-_GEMINI_TIMEOUT_MS = 20000
+_EXECUTOR = ThreadPoolExecutor(max_workers=4)
+
+_GEMINI_HTTP_DEADLINE_MS = 10000  # minimo que acepta la API; el corte UX lo da el presupuesto
+
+
+class _GeminiTimeout(Exception):
+    """Gemini no respondio dentro del presupuesto; el flujo cae a spaCy."""
 
 
 def get_nlp():
@@ -50,7 +57,7 @@ def _gemini_client():
 
     return Client(
         api_key=get_api_key(),
-        http_options=types.HttpOptions(timeout=_GEMINI_TIMEOUT_MS),
+        http_options=types.HttpOptions(timeout=_GEMINI_HTTP_DEADLINE_MS),
     )
 
 
@@ -101,13 +108,24 @@ def _parse_gemini_response(text):
     }
 
 
-def _gemini_validate_sentence(word_english, sentence):
+def _gemini_generate(word_english, sentence):
     client = _gemini_client()
     response = client.models.generate_content(
         model=get_model(),
         contents=_build_gemini_prompt(word_english, sentence),
     )
-    return _parse_gemini_response(response.text)
+    return response.text
+
+
+def _gemini_validate_sentence(word_english, sentence):
+    future = _EXECUTOR.submit(_gemini_generate, word_english, sentence)
+    try:
+        text = future.result(timeout=get_gemini_timeout_ms() / 1000)
+    except FutureTimeout:
+        raise _GeminiTimeout(
+            f"Gemini no respondio dentro de {get_gemini_timeout_ms()} ms"
+        )
+    return _parse_gemini_response(text)
 
 
 def validate_sentence(word_english, sentence):

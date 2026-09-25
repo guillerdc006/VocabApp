@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Informe de progreso - VocabApp{% endblock %}
+
+{% block content %}
+<div class="row mb-3 align-items-center">
+    <div class="col">
+        <h2 class="fw-bold mb-0"><i class="bi bi-file-earmark-bar-graph"></i> Informe de progreso</h2>
+        <span class="text-muted small">Generado {{ data.generated }} (UTC)</span>
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('report.report_pdf') }}" class="btn btn-dark">
+            <i class="bi bi-download"></i> Descargar PDF
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-book text-primary stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ data.n_words }}</h3>
+                <p class="text-muted mb-0">Palabras totales</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-check-circle text-success stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ data.all_time_accuracy }}%</h3>
+                <p class="text-muted mb-0">Precision general</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-play-circle text-primary stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ data.n_sessions }}</h3>
+                <p class="text-muted mb-0">Sesiones registradas</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <i class="bi bi-fire text-danger stat-icon"></i>
+                <h3 class="fw-bold mt-2">{{ data.current_streak }}
+                    {% if data.current_streak == 1 %}dia{% else %}dias{% endif %}</h3>
+                <p class="text-muted mb-0">Racha actual (mejor {{ data.best_streak }})</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold">Resumen de practica</div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Precision quiz</span><strong>{{ data.quiz_accuracy }}%</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Oraciones validas (quiz)</span><strong>{{ data.valid_sentence_rate }}%</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Puntaje promedio</span><strong>{{ data.avg_score }}/110</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Practicas con ayuda</span><strong>{{ data.helped }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Dias activos</span><strong>{{ data.active_days }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Ritmo (ult. 7 dias)</span><strong>{{ data.rate_avg }} palabras/dia</strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold">Carga de repaso</div>
+            <div class="card-body">
+                <div class="row text-center g-3">
+                    <div class="col-4">
+                        <h3 class="fw-bold mb-0">{{ data.new_pending }}</h3>
+                        <span class="text-muted small">Nuevas</span>
+                    </div>
+                    <div class="col-4">
+                        <h3 class="fw-bold mb-0 text-danger">{{ data.vencidas_total }}</h3>
+                        <span class="text-muted small">Vencidas (hoy + atrasadas)</span>
+                    </div>
+                    <div class="col-4">
+                        <h3 class="fw-bold mb-0">{{ data.backlog }}</h3>
+                        <span class="text-muted small">Cola total</span>
+                    </div>
+                </div>
+                <p class="small text-muted mt-3 mb-0">
+                    Practicadas hoy: <strong>{{ data.practiced_today }}</strong>. La cola es la suma de
+                    palabras nuevas + vencidas pendientes de repaso SM-2.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for title, b64 in charts %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold">{{ title }}</div>
+    <div class="card-body text-center">
+        <img src="data:image/png;base64,{{ b64 }}" alt="{{ title }}" class="img-fluid">
+    </div>
+</div>
+{% endfor %}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold text-danger">
+                <i class="bi bi-exclamation-triangle"></i> Palabras mas dificiles
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Palabra</th><th>Espanol</th><th class="text-end">Precision</th><th class="text-end">Fallos</th></tr></thead>
+                    <tbody>
+                        {% for w in data.hardest %}
+                        <tr>
+                            <td class="fw-bold">{{ w.english }}</td>
+                            <td>{{ w.spanish }}</td>
+                            <td class="text-end">{{ w.accuracy }}%</td>
+                            <td class="text-end">{{ w.failures }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center text-muted">Sin datos aun.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white fw-bold text-success">
+                <i class="bi bi-trophy"></i> Palabras mejor dominadas
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Palabra</th><th>Espanol</th><th class="text-end">Precision</th><th class="text-end">Veces</th></tr></thead>
+                    <tbody>
+                        {% for w in data.easiest %}
+                        <tr>
+                            <td class="fw-bold">{{ w.english }}</td>
+                            <td>{{ w.spanish }}</td>
+                            <td class="text-end">{{ w.accuracy }}%</td>
+                            <td class="text-end">{{ w.times_practiced }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="text-center text-muted">Sin datos aun.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

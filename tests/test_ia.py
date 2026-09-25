@@ -1,4 +1,4 @@
-from app.config import Config, get_api_key, get_validator
+from app.config import Config, get_api_key, get_gemini_timeout_ms, get_validator
 from app.models import SessionHistory
 from app.services import nlp_validator
 from app.services.nlp_validator import (
@@ -12,9 +12,22 @@ class TestConfigIA:
     def test_claves_ia_presentes(self):
         assert hasattr(Config, "GEMINI_API_KEY")
         assert hasattr(Config, "NLP_VALIDATOR")
+        assert hasattr(Config, "GEMINI_TIMEOUT_MS")
 
     def test_validator_es_gemini_o_spacy(self):
         assert get_validator() in ("gemini", "spacy")
+
+    def test_timeout_default(self, monkeypatch):
+        monkeypatch.delenv("GEMINI_TIMEOUT_MS", raising=False)
+        assert get_gemini_timeout_ms() == 3000
+
+    def test_timeout_env_gana(self, monkeypatch):
+        monkeypatch.setenv("GEMINI_TIMEOUT_MS", "1500")
+        assert get_gemini_timeout_ms() == 1500
+
+    def test_timeout_invalido_vuelve_al_default(self, monkeypatch):
+        monkeypatch.setenv("GEMINI_TIMEOUT_MS", "abc")
+        assert get_gemini_timeout_ms() == 3000
 
     def test_env_gana_sobre_el_default(self, monkeypatch):
         monkeypatch.setenv("GEMINI_API_KEY", "test-key-123")
@@ -82,19 +95,25 @@ class TestParseGeminiResponse:
 
 
 class _StubClient:
-    def __init__(self, text):
+    def __init__(self, text, delay=0.0):
         self._text = text
+        self._delay = delay
 
     @property
     def models(self):
+        import time
+
         class _Models:
-            def __init__(self, text):
+            def __init__(self, text, delay):
                 self._text = text
+                self._delay = delay
 
             def generate_content(self, model, contents):
+                if self._delay:
+                    time.sleep(self._delay)
                 return type("R", (), {"text": self._text})()
 
-        return _Models(self._text)
+        return _Models(self._text, self._delay)
 
 
 class TestPipeline:
@@ -147,6 +166,32 @@ class TestPipeline:
         result, used = validate_sentence_pipeline("apple", "  ")
         assert used == "spacy"
         assert result["valid"] is False
+
+    def test_gemini_lento_cae_a_spacy_dentro_del_presupuesto(self, monkeypatch):
+        monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+        monkeypatch.setenv("NLP_VALIDATOR", "gemini")
+        monkeypatch.setattr(
+            nlp_validator,
+            "get_gemini_timeout_ms",
+            lambda: 40,
+        )
+        monkeypatch.setattr(
+            nlp_validator,
+            "_gemini_client",
+            lambda: _StubClient(
+                '{"word_found": true, "has_verb": true, "token_count": 6, '
+                '"details": "Correcta", "suggestion": null}',
+                delay=0.3,
+            ),
+        )
+        import time
+
+        t0 = time.perf_counter()
+        result, used = validate_sentence_pipeline("apple", "I eat an apple every day")
+        elapsed = time.perf_counter() - t0
+        assert used == "spacy"
+        assert result["valid"] is True
+        assert elapsed < 0.25, f"tardo {elapsed:.3f}s en vez de caer rapido"
 
 
 class TestQuizIntegration:

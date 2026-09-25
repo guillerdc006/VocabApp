@@ -19,10 +19,12 @@ def create_app(config_class=None):
     from .routes.main import main_bp
     from .routes.vocabulary import vocab_bp
     from .routes.study import study_bp
+    from .routes.report import report_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(vocab_bp, url_prefix="/vocabulary")
     app.register_blueprint(study_bp, url_prefix="/study")
+    app.register_blueprint(report_bp)
 
     with app.app_context():
         from . import models

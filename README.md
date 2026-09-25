@@ -12,19 +12,19 @@
 
 ## Descripcion
 
-VocabApp es una aplicacion web disenada para el repaso activo de vocabulario ingles-espanol. Funciona completamente en local (localhost), sin necesidad de servicios externos ni conexion a internet.
+VocabApp es una aplicacion web disenada para el repaso activo de vocabulario ingles-espanol. Funciona en local (localhost); la unica pieza opcional que usa la nube es la **validacion IA de oraciones con Google Gemini** (se desactiva simplemente no configurando la clave en `.env`).
 
-El usuario presenta una palabra en espanol, escribe su traduccion en ingles y formula una oracion con ella. La app verifica ambas respuestas usando NLP (spaCy) y aplica el algoritmo **SM-2 de Spaced Repetition** para determinar cuando revisar cada palabra nuevamente.
+El usuario presenta una palabra en espanol, escribe su traduccion en ingles y formula una oracion con ella. La app verifica ambas respuestas usando NLP (spaCy, con Gemini opcional) y aplica el algoritmo **SM-2 de Spaced Repetition** para determinar cuando revisar cada palabra nuevamente.
 
 ---
 
 ## Key Features
 
 - **SM-2 Spaced Repetition** — Words are scheduled for review based on performance. Difficult words appear more often; mastered words are spaced further apart.
-- **NLP Sentence Validation** — spaCy validates that the English word (or multi-word expression) appears in the sentence. Supports single words, lemmas, and complete phrases (e.g. "get lost", "show up on time"). Also validates auxiliary verbs (is/are/was/were/be).
+- **NLP Sentence Validation** — spaCy validates that the English word (or multi-word expression) appears in the sentence. Supports single words, lemmas, and complete phrases (e.g. "get lost", "show up on time"). Also validates auxiliary verbs (is/are/was/were/be). Optional **Gemini** (AI) validator with automatic fallback adds suggestions for corrected sentences.
 - **Excel Bulk Import** — Import hundreds of words at once from an `.xlsx` file via the web UI or CLI.
-- **Progress Tracking** — Dashboard with accuracy metrics, word difficulty levels, and session history.
-- **Fully Local** — Runs on `127.0.0.1:5000`. No cloud, no accounts, no external APIs.
+- **Progress Tracking** — Dashboard, Estadisticas with accuracy metrics, word difficulty levels, session history, and a consolidated server-side report (`/report`) with PDF export.
+- **Fully Local** — Runs on `127.0.0.1:5000`. No cloud, no accounts (the only optional cloud piece is the Gemini validator).
 
 ---
 
@@ -52,6 +52,9 @@ El usuario presenta una palabra en espanol, escribe su traduccion en ingles y fo
 | Migraciones | Flask-Migrate (Alembic) | 4.1.0 |
 | Base de datos | SQLite | archivo local |
 | NLP | spaCy + en_core_web_sm | 3.8.x |
+| Validacion IA | Google Gemini (google-genai) | 2.25.0 |
+| Analitica | pandas | 3.0.6 |
+| Graficos / PDF | matplotlib (Agg) | 3.11.2 |
 | Excel | openpyxl | 3.1.5 |
 | Frontend | Bootstrap 5 + Jinja2 | CDN |
 | Iconos | Bootstrap Icons | 1.11.3 |
@@ -88,6 +91,7 @@ python -m spacy download en_core_web_sm
 # Crear un archivo .env en la raiz del proyecto (ya esta en .gitignore):
 #   GEMINI_API_KEY=tu-clave
 #   NLP_VALIDATOR=gemini      # 'spacy' la desactiva
+#   GEMINI_TIMEOUT_MS=3000    # presupuesto (ms) para Gemini antes de caer a spaCy
 
 # 5. (Opcional) Importar vocabulario desde Excel
 python import_excel.py                          # usa Vocabulary.xlsx por defecto
@@ -99,7 +103,7 @@ python run.py
 
 La app estara disponible en: **http://127.0.0.1:5000**
 
-> **Nota:** La base de datos se crea automaticamente en `instance/vocabulary.db` al iniciar la app por primera vez.
+> **Nota:** La base de datos se crea/actualiza automaticamente en `instance/vocabulary.db` (SQLite en modo WAL) al iniciar la app: `create_all()` crea las tablas nuevas y las migraciones Alembic (`flask db upgrade`) versionan los cambios de esquema. Nunca se destruyen datos con `drop_all()` contra la base real.
 
 ---
 
@@ -129,7 +133,13 @@ Subir un archivo `.xlsx` con columnas `english`/`spanish` (o `ingles`/`espanol`)
 ### Estadisticas (`/study/stats`)
 Precision general, palabras mas dificiles, palabras mejor dominadas e historial completo paginado con filtros (palabra, correctas/incorrectas, tipo de sesion, rango de fechas). Ademas: racha actual y mejor racha de practica, dias activos, precision por tipo de sesion (quiz/matcher), direccion (es-en / en-es) y validador (IA Gemini / spaCy), contador de "practicas con ayuda" (respuesta revelada), panel de carga de repaso SM-2 (nuevas/vencidas/cola, repasos programados a 14 dias, ritmo diario y proyeccion), grafico de evolucion de precision (30 dias, con serie por tipo) y calendario de actividad (16 semanas).
 
+### Informe (`/report`)
+Reporte consolidado de progreso generado en servidor (pandas para el analisis, matplotlib para los graficos): metricas clave, resumen de practica, carga de repaso, precision por tipo/direccion/validador, evolucion de 30 dias, calendario de actividad, distribucion por nivel SM-2, repasos programados a 14 dias y tablas de palabras mas dificiles / mejor dominadas. Boton **"Descargar PDF"** (`/report/pdf`) para exportarlo como informe multipagina (informe-progreso-YYYYMMDD.pdf).
+
 > **Zona horaria (UTC):** todos los timestamps y cortes de "hoy" se calculan en **UTC**. El sistema corre en `America/Guayaquil` (UTC-5), por lo que el dia UTC rueda a las **19:00 hora local**: entre 19:00 y medianoche local, una practica se registra con la fecha UTC del dia siguiente.
+
+### Diccionario de mediciones
+[`MEDICIONES.md`](MEDICIONES.md) documenta como se calcula **cada metrica y cada visual** de la app (que mide, formula/definicion, fuente de datos y objetivo), ademas del objetivo de cada servicio. Es la guia de referencia para leer los numeros de la app, para implementar el proyecto desde cero o para presentarlo como portafolio.
 
 ### Pruebas (pytest)
 ```bash
@@ -153,12 +163,12 @@ FLASK_APP=run.py flask db upgrade    # aplica la migracion a la BD
 
 ```
 run.py  →  app/__init__.py (create_app())  →  Blueprints  →  Routes  →  Templates
-                                    ↓
-                              extensions.py (db, migrate)
-                                    ↓
-                              models.py (Word, WordStats, SessionHistory)
-                                    ↓
-                              services/ (sm2, nlp_validator, excel_import)
+                              ↓
+                    extensions.py (db, migrate: instancias SQLAlchemy + Alembic)
+                              ↓
+                         models.py (Word, WordStats, SessionHistory)
+                              ↓
+        services/ (sm2, nlp_validator, excel_import, analytics, reporting)
 ```
 
 ### Blueprints
@@ -167,40 +177,54 @@ run.py  →  app/__init__.py (create_app())  →  Blueprints  →  Routes  →  
 |---|---|---|
 | `main_bp` | `/` | Dashboard y pagina de inicio |
 | `vocab_bp` | `/vocabulary` | CRUD de vocabulario + importacion Excel |
-| `study_bp` | `/study` | Quiz, resultado, revision y estadisticas |
+| `study_bp` | `/study` | Quiz, resultado, matcher y estadisticas |
+| `report_bp` | `/report` | Informe de progreso y exportacion PDF |
 
 ### Database Schema
 
 ```
-┌─────────────────────┐       ┌─────────────────────────┐
-│       words          │       │      word_stats          │
-├─────────────────────┤       ├─────────────────────────┤
-│ id (PK)             │──1:1──│ word_id (FK, UNIQUE)     │
-│ english (UNIQUE)    │       │ repetitions              │
-│ spanish             │       │ easiness_factor          │
-│ created_at          │       │ interval                 │
-└─────────────────────┘       │ times_practiced          │
-                              │ times_correct            │
-                              │ level (0-3)              │
-                              │ next_review              │
-                              │ last_practiced           │
-                              └─────────────────────────┘
-                                           │
-                              ┌─────────────────────────┐
-                              │   session_history        │
-                              ├─────────────────────────┤
-                              │ id (PK)                  │
-                              │ word_id (FK)             │
-                              │ english_answer           │
-                              │ sentence                 │
-                              │ sentence_details         │
-                              │ is_correct               │
-                              │ sentence_valid           │
-                              │ score                    │
-                              │ quality (SM-2: 0-5)      │
-                              │ created_at               │
-                              └─────────────────────────┘
+┌──────────────────────────┐     ┌────────────────────────────────┐
+│          words           │     │           word_stats            │
+├──────────────────────────┤     ├────────────────────────────────┤
+│ id (PK)                  │──1:1│ word_id (FK, UNIQUE)            │
+│ english (UNIQUE)         │     │ repetitions                     │
+│ spanish                  │     │ easiness_factor (SM-2 EF)       │
+│ notes                    │     │ interval (dias)                 │
+│ created_at               │     │ times_practiced                 │
+└──────────────────────────┘     │ times_correct (aciertos totales)│
+                                 │ level (0 Nueva..3 Dificil)      │
+                                 │ next_review  (UTC, proximo)     │
+                                 │ last_practiced (UTC)            │
+                                 └────────────────────────────────┘
+                                              │
+                                ┌─────────────────────────────────┐
+                                │         session_history          │
+                                ├─────────────────────────────────┤
+                                │ id (PK)                         │
+                                │ word_id (FK)                    │
+                                │ english_answer (lo escrito)     │
+                                │ sentence (oracion del usuario)  │
+                                │ sentence_details (feedback NLP) │
+                                │ sentence_suggestion (IA)        │
+                                │ is_correct (mitad palabra)      │
+                                │ sentence_valid (mitad oracion)  │
+                                │ was_revealed (uso de ayuda)     │
+                                │ score (0-110)                   │
+                                │ quality (SM-2: 0-5)             │
+                                │ session_type (quiz/match)       │
+                                │ direction (es_to_en/en_to_es)   │
+                                │ validator_source (gemini/spacy) │
+                                │ created_at (UTC)                │
+                                └─────────────────────────────────┘
 ```
+
+**Como funciona la base de datos:**
+
+- **Archivo unico SQLite en modo WAL** (`PRAGMA journal_mode=WAL`, `busy_timeout=5000`, `foreign_keys=ON`) en `instance/vocabulary.db`. El modo WAL permite lecturas concurrentes con una sola escritura y es mas resistente a corridas; el backup us `sqlite3.Connection.backup()` (nunca `cp`).
+- **Tres tablas relacionales:** `words` (1 palabra) → `word_stats` (1 registro de progreso SM-2 por palabra, relacion 1:1) y `session_history` (N sesiones de practica por palabra). No hay otras tablas.
+- **Timestamps en UTC y naive:** todos los registros de tiempo (`created_at`, `next_review`, `last_practiced`) se calculan en `datetime.now(timezone.utc)` y SQLite los guarda como `datetime` sin zona horaria (naive), interpretados siempre como UTC por los servicios de analitica (`analytics.py`, `reporting.py`). No se hace ninguna conversion a hora local.
+- **Ciclo de vida:** `db.create_all()` crea las tablas nuevas al arrancar (idempotente), y los cambios de esquema ya presentes se versionan con **Flask-Migrate/Alembic** (`migrations/`), aplicandose con `flask db upgrade`. Nunca se usa `drop_all()` contra la BD real: `GuardedSQLAlchemy` (`extensions.py`) lo bloquea salvo `ALLOW_DESTRUCTIVE_OPERATIONS=1`.
+- **Antes de migrar o depurar:** ejecutar `python3 scripts/backup_db.py` (genera `instance/vocabulary.db.bak-YYYYMMDD-HHMMSS` y verifica el conteo de palabras).
 
 ### SM-2 Spaced Repetition Algorithm
 
@@ -230,13 +254,21 @@ EF = max(1.3, EF')
 La validacion de oraciones tiene **dos proveedores** intercambiables con el mismo
 contrato de salida `{ valid, word_found, has_verb, token_count, details, suggestion }`:
 
-1. **IA (Gemini)** — defecto si hay `GEMINI_API_KEY` en `.env` y `GEMINI_VALIDATOR=gemini`.
+1. **IA (Gemini)** — defecto si hay `GEMINI_API_KEY` en `.env` y `NLP_VALIDATOR=gemini`.
    Una llamada a `Models.generate_content` (modelo `gemini-3.6-flash`, configurable) juzga:
    la palabra/frase (permitiendo inflexiones: go -> went/gone), si hay verbo principal y la
    longitud, y cuando la oracion falla devuelve una **sugerencia** de oracion corregida que se
-   guarda en el historial y se muestra en el resultado. Timeout de 20 s.
-2. **Local (spaCy)** — fallback automatico si Gemini no esta configurado, falla o el servicio
-   devuelve 503 por alta demanda (tier gratuito). No hace sugerencias.
+   guarda en el historial y se muestra en el resultado.
+2. **Local (spaCy)** — fallback automatico si Gemini no esta configurado, falla o no responde a
+   tiempo. No hace sugerencias.
+
+**Latencia garantizada:** la validacion con Gemini corre con un **presupuesto de tiempo**
+(`GEMINI_TIMEOUT_MS`, defecto `3000` ms en `.env`). Si la API no responde dentro del presupuesto
+(errores del tier gratuito como `429` por cuota o lentitud con demanda alta), se cae a spaCy y el
+quiz nunca se queda colgado: el peor caso de espera es el presupuesto y lo tipico es < 1 segundo.
+El deadline HTTP por intento queda fijo en `10000` ms (minimo que exige la API; el corte de UX lo
+impone el presupuesto). Para esperar mas a Gemini en dias lentos, subir `GEMINI_TIMEOUT_MS`; para
+una respuesta aun mas instantanea, bajarlo.
 
 ```
 Entrada: oracion del usuario + palabra objetivo
@@ -270,36 +302,59 @@ y mostrar el badge "Validada con IA" en el resultado de la practica.
 VocabApp/
 ├── run.py                          # Entry point — inicia Flask en localhost:5000
 ├── requirements.txt                # Dependencias Python
+├── requirements-dev.txt            # Dependencias de testing (pytest, spaCy model)
 ├── setup.sh                        # Script de instalacion automatica
 ├── import_excel.py                 # CLI para importar Excel
 ├── Vocabulary.xlsx                 # Dataset de ejemplo (256 palabras)
+├── .env                            # Config local (claves Gemini, NLP_VALIDATOR, timeout)
 ├── .gitignore
+├── AGENTS.md                       # Guia de trabajo: BD real, backup, pruebas
 ├── LICENSE                         # MIT License
 │
-├── instance/                       # Base de datos SQLite (gitignored)
-│   └── vocabulary.db
+├── instance/                       # Datos locales (gitignored)
+│   ├── vocabulary.db               # Base de datos real (SQLite, WAL)
+│   └── vocabulary.db.bak-*         # Backups generados por scripts/backup_db.py
+│
+├── migrations/                     # Versionado de esquema (Flask-Migrate/Alembic)
+│   └── versions/                   # 990ceaa573c9, b6ed4e264721, 7b07b91d82c0, ...
+│
+├── scripts/
+│   └── backup_db.py                # Backup seguro de la BD (sqlite3.backup)
+│
+├── tests/                          # Suite pytest (BD aislada por test)
+│   ├── conftest.py                 # Fixtures app/cliente + suite sin red
+│   ├── test_smoke.py               # Smoke tests de todas las rutas
+│   ├── test_ia.py                  # Validacion Gemini/spaCy + presupuesto
+│   ├── test_report.py              # Informe /report y PDF
+│   ├── test_practica_con_ayuda.py  # Boton "No recuerdo / Ver respuesta"
+│   ├── test_hint.py, test_reverse_quiz.py, test_match.py, ...
+│   └── ...
 │
 └── app/                            # Paquete principal de la aplicacion
     ├── __init__.py                 # create_app() — Application Factory
-    ├── config.py                   # Configuracion (SECRET_KEY, DB URI)
-    ├── extensions.py               # SQLAlchemy + Migrate (instancias compartidas)
+    ├── config.py                   # Configuracion (SECRET_KEY, DB URI, Gemini)
+    ├── extensions.py               # SQLAlchemy + Migrate (con GuardedSQLAlchemy)
     ├── models.py                   # Modelos: Word, WordStats, SessionHistory
     │
     ├── routes/                     # Blueprints (capa de presentacion)
     │   ├── main.py                 # Dashboard (/)
     │   ├── vocabulary.py           # CRUD + import (/vocabulary/*)
-    │   └── study.py                # Quiz + stats (/study/*)
+    │   ├── study.py                # Quiz, matcher, stats (/study/*)
+    │   └── report.py               # Informe (/report, /report/pdf)
     │
     ├── services/                   # Logica de negocio
     │   ├── sm2.py                  # Algoritmo SM-2 de Spaced Repetition
-    │   ├── nlp_validator.py        # Validacion de oraciones con spaCy
-    │   └── excel_import.py         # Lectura de archivos Excel con openpyxl
+    │   ├── nlp_validator.py        # Validacion de oraciones (spaCy + Gemini)
+    │   ├── excel_import.py         # Lectura de archivos Excel con openpyxl
+    │   ├── analytics.py            # Estadisticas (racha, carga, heatmap, ...)
+    │   └── reporting.py            # Informe pandas + matplotlib (+PDF)
     │
     ├── templates/                  # Jinja2 templates
     │   ├── base.html               # Layout base (navbar, Bootstrap 5)
     │   ├── main/index.html         # Dashboard
-    │   ├── vocabulary/             # list.html, add.html, import.html
-    │   └── study/                  # quiz.html, result.html, stats.html
+    │   ├── vocabulary/             # list, add, edit, import
+    │   ├── study/                  # quiz, result, stats, match
+    │   └── report/report.html      # Informe de progreso
     │
     └── static/css/
         └── style.css               # Estilos custom
@@ -327,7 +382,61 @@ Ejemplo:
 
 ---
 
+## Estudio de caso: que dicen los datos de tu repaso
+
+Este proyecto cierra el ciclo completo de un **analista** en una solucion real. El informe
+(`/report` y el PDF descargable) convierte datos crudos en decisiones de estudio. Las metricas se
+pueden leer como un conjunto de hipotesis verificables sobre tu aprendizaje:
+
+**1. La carga de repaso es el indicador de sostenibilidad.** SM-2 programa cada palabra; la cola
+= palabras nuevas + vencidas pendientes. Si "vencidas hoy + atrasadas" supera lo que despejas por
+semana, la cola crece inevitablemente: el panel te lo advierte ("Considera aumentar la practica").
+Es el mismo diagnostico que haria un CRM sobre un backlog de clientes.
+
+**2. Precision por tipo, direccion y validador separa los factores.** Las tres tablas de
+Estadisticas (y el primer grafico del informe) te dicen *donde* pierdes puntos: si la precision de
+`match` es alta pero la de `quiz` baja, el problema es produccion activa (escribir) y no
+reconocimiento. Si `en_to_es` cae por debajo de `es_to_en`, el deficit esta en vocabulario
+productivo en espanol. Y la tabla por validador separa la dificultad real de la palabra del ruido
+del evaluador (una oracion mal validada por spaCy no es un fallo tuyo).
+
+**3. La curva de retencion espaciada.** Juntando la evolucion de 30 dias (por tipo) con el
+calendario y la distribucion por nivel, se ve cuantas palabras han superado al menos un repaso
+(niveles 1-3) frente a las que siguen en "Nueva" (colas sin tocar). El informe las une en una sola
+captura para decidir, por ejemplo, si conviene mas ampliar el ritmo de los repasos o consolidar el
+nivel actual.
+
+**4. El registro honesto de la ayuda (`was_revealed`).** Cuando usas "No recuerdo / Ver respuesta",
+la respuesta se marca como fallo y se cuenta como "practica con ayuda". Sin ese registro, la
+precision real seria optimista: es lo que un buen analista llama un sesgo de reporte. Con el
+contador puedes medir cuantas palabras resuelves sin esfuerzo y decidir si el boton se esta
+convirtiendo en un atajo.
+
+**5. Interpretacion segura del tiempo.** Todo se registra en UTC (el sistema corre en
+`America/Guayaquil`, UTC-5), asi que "hoy" es consistente sin importar la hora local; el informe
+lleva la marca de generacion UTC para que una captura analitica sea reproducible y comparable con
+otras.
+
+El flujo completo —captura con SM-2 desde cero, mejora continua del evaluador (spaCy -> Gemini con
+fallback), rendimiento acotado y reporte autocontenido— muestra como una base de datos de uso
+(SQLite) y un pipeline de analitica (pandas + matplotlib) se combinan en un producto pequeno pero
+completo.
+
+---
+
 ## Changelog
+
+### v1.20 (2026-09-25) — Informe de progreso (`/report`) y export PDF
+- Nueva ruta `/report` con informe consolidado generado en servidor: metricas clave, resumen de practica (precision quiz, oraciones validas, puntaje promedio, practicas con ayuda, ritmo), carga de repaso, cinco graficos (precision por tipo/direccion/validador, evolucion 30 dias, calendario de actividad 16 semanas, distribucion por nivel SM-2 y repasos programados 14 dias) y tablas de palabras mas dificiles / mejor dominadas.
+- El analisis se arma con **pandas** (agregaciones por tipo, direccion y validador; distribucion de niveles; listas de rendimiento) y los graficos se renderizan con **matplotlib** (backend `Agg`, sin ventanas). Una misma pasada genera los PNG incrustados de la web y el **PDF multipagina** descargable en `/report/pdf` (informe-progreso-YYYYMMDD.pdf) con resolucion A4.
+- Nuevas dependencias pineadas: `pandas==3.0.6` y `matplotlib==3.11.2`.
+- Solo lectura de la BD: el informe nunca escribe datos. Tests en `tests/test_report.py` (5). Suite completa **118 passed**.
+
+### v1.19.1 (2026-09-25) — Latencia de validacion acotada
+- La validacion con Gemini corre ahora con un **presupuesto de tiempo** (`GEMINI_TIMEOUT_MS`, defecto `3000` ms, configurable en `.env`): si la API no responde a tiempo (por ejemplo `429` por cuota o lentitud por demanda alta del tier gratuito), la validacion cae a spaCy y el quiz nunca se cuelga. El deadline HTTP por intento queda en `10000` ms (minimo que exige la API) y el corte de UX lo impone el presupuesto.
+- Antes la espera podia llegar a 10-20 s (deadline de 20 s + reintentos). Ahora el peor caso es el presupuesto y lo tipico es < 1 s.
+- Nuevos tests: config del timeout (default/env/invalido) y caida rapida a spaCy si Gemini tarda. Suite completa **113 passed**.
+- Se establecio control de versiones Git con punto de retorno `5efd638` (v1.19 completo, antes de este cambio).
 
 ### v1.19 (2026-09-25) — Ayuda al recordar en la practica
 - La pista ("Mostrar pista") ahora este **siempre visible** en el quiz, tambien para palabras sin observacion: en ese caso muestra "La palabra no tiene observacion."
