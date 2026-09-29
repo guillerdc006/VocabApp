@@ -19,7 +19,7 @@ class TestConfigIA:
 
     def test_timeout_default(self, monkeypatch):
         monkeypatch.delenv("GEMINI_TIMEOUT_MS", raising=False)
-        assert get_gemini_timeout_ms() == 3000
+        assert get_gemini_timeout_ms() == 9000
 
     def test_timeout_env_gana(self, monkeypatch):
         monkeypatch.setenv("GEMINI_TIMEOUT_MS", "1500")
@@ -27,7 +27,7 @@ class TestConfigIA:
 
     def test_timeout_invalido_vuelve_al_default(self, monkeypatch):
         monkeypatch.setenv("GEMINI_TIMEOUT_MS", "abc")
-        assert get_gemini_timeout_ms() == 3000
+        assert get_gemini_timeout_ms() == 9000
 
     def test_env_gana_sobre_el_default(self, monkeypatch):
         monkeypatch.setenv("GEMINI_API_KEY", "test-key-123")

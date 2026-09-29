@@ -96,7 +96,7 @@ python -m spacy download en_core_web_sm
 # Crear un archivo .env en la raiz del proyecto (ya esta en .gitignore):
 #   GEMINI_API_KEY=tu-clave
 #   NLP_VALIDATOR=gemini      # 'spacy' la desactiva
-#   GEMINI_TIMEOUT_MS=3000    # presupuesto (ms) para Gemini antes de caer a spaCy
+#   GEMINI_TIMEOUT_MS=9000    # presupuesto (ms) para Gemini antes de caer a spaCy (default 9000)
 
 # 5. (Opcional) Importar vocabulario desde Excel
 python import_excel.py                          # usa Vocabulary.xlsx por defecto
@@ -268,12 +268,14 @@ contrato de salida `{ valid, word_found, has_verb, token_count, details, suggest
    tiempo. No hace sugerencias.
 
 **Latencia garantizada:** la validacion con Gemini corre con un **presupuesto de tiempo**
-(`GEMINI_TIMEOUT_MS`, defecto `3000` ms en `.env`). Si la API no responde dentro del presupuesto
+(`GEMINI_TIMEOUT_MS`, defecto `9000` ms en `.env`). El valor por defecto se fijo midiendo la
+latencia real del API (tipicamente 6-8 s en este entorno): con `3000` ms Gemini casi nunca
+terminaba a tiempo y la practica caia siempre a spaCy. Si la API no responde dentro del presupuesto
 (errores del tier gratuito como `429` por cuota o lentitud con demanda alta), se cae a spaCy y el
-quiz nunca se queda colgado: el peor caso de espera es el presupuesto y lo tipico es < 1 segundo.
-El deadline HTTP por intento queda fijo en `10000` ms (minimo que exige la API; el corte de UX lo
-impone el presupuesto). Para esperar mas a Gemini en dias lentos, subir `GEMINI_TIMEOUT_MS`; para
-una respuesta aun mas instantanea, bajarlo.
+quiz nunca se queda colgado: el peor caso de espera es el presupuesto (< 9 s). El deadline HTTP por
+intento queda fijo en `10000` ms (minimo que exige la API; el corte de UX lo impone el presupuesto).
+Para esperar mas a Gemini en dias lentos, subir `GEMINI_TIMEOUT_MS` (maximo util ~`9500`); para una
+respuesta aun mas instantanea a costa de menos validaciones IA, bajarlo.
 
 ```
 Entrada: oracion del usuario + palabra objetivo
@@ -430,6 +432,12 @@ completo.
 ---
 
 ## Changelog
+
+### v1.20.1 (2026-09-29) — Gemini vuelve a validar: presupuesto ajustado a la latencia real
+- Durante la practica se observo que la validacion **siempre** caia a spaCy. Diagnostico: no era congestión, sino que el presupuesto por defecto (`GEMINI_TIMEOUT_MS=3000` ms) era **menor que la latencia real** del API en este entorno, medida con la clave configurada: intentos exitosos de ~6.2 s y ~7.8 s (y un caso que supero el deadline HTTP de 10 s).
+- Con 3000 ms el corte (`future.result(timeout=3)`) se disparaba casi siempre, provocando el fallback silencioso a spaCy.
+- Ajuste: **default a `9000` ms** (`app/config.py`, `.env` y documentacion). La latencia promedio medida (~7 s) queda dentro del presupuesto, con margen antes del deadline HTTP de `10000` ms. Sigue configurable por entorno.
+- Tests: defaults del timeout actualizados (`tests/test_ia.py`). Suite completa **118 passed**.
 
 ### v1.20 (2026-09-25) — Informe de progreso (`/report`) y export PDF
 - Nueva ruta `/report` con informe consolidado generado en servidor: metricas clave, resumen de practica (precision quiz, oraciones validas, puntaje promedio, practicas con ayuda, ritmo), carga de repaso, cinco graficos (precision por tipo/direccion/validador, evolucion 30 dias, calendario de actividad 16 semanas, distribucion por nivel SM-2 y repasos programados 14 dias) y tablas de palabras mas dificiles / mejor dominadas.

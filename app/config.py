@@ -15,7 +15,7 @@ class Config:
     GEMINI_API_KEY = ""  # el runtime toma la clave de os.environ (.env), aqui solo se documenta
     NLP_VALIDATOR = "gemini"
     GEMINI_MODEL = "gemini-3.6-flash"
-    GEMINI_TIMEOUT_MS = 3000
+    GEMINI_TIMEOUT_MS = 9000
 
 
 def get_api_key():

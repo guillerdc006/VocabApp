@@ -181,7 +181,9 @@ Metricas clave para la sostenibilidad del repaso (`study_bp.stats`, `main_bp.ind
   2. **Presupuesto (`GEMINI_TIMEOUT_MS`):** la llamada corre en un hilo con
      `future.result(timeout=presupuesto)`. El deadline HTTP por intento esta fijo en
      `10000 ms` (minimo que exige la API); el corte de UX lo pone el presupuesto
-     (default `3000 ms`). Peor caso de espera = presupuesto; tipico < 1 s.
+     (default `9000 ms` — fijado a partir de la latencia real medida, ~6-8 s). Peor caso de
+     espera = presupuesto; si el presupuesto es menor que la latencia tipica, la validacion
+     caera casi siempre a spaCy (por eso `3000` ms era insuficiente en la practica).
   3. **spaCy (verificaciones):** la palabra/expresion presente con tokens consecutivos
      en orden (soporta inflexiones y expresiones multi-palabra como "get lost");
      al menos un verbo (`VERB` o `AUX`); 3+ tokens sin puntuacion.
