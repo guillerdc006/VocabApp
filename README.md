@@ -659,5 +659,5 @@ SOFTWARE.
 
 MSc in Information Systems (Data Science) | Electronics Engineer
 
-* LinkedIn: [https://www.linkedin.com](linkedin.com/in/guillermodominguezcrespo)
+* LinkedIn: [https://www.linkedin.com](https://linkedin.com/in/guillermodominguezcrespo)
 * GitHub: [https://github.com](https://github.com/guillerdc006)
