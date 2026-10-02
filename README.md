@@ -12,9 +12,31 @@
 
 ## Descripcion
 
-VocabApp es una aplicacion web disenada para el repaso activo de vocabulario ingles-espanol. Funciona en local (localhost); la unica pieza opcional que usa la nube es la **validacion IA de oraciones con Google Gemini** (se desactiva simplemente no configurando la clave en `.env`).
+VocabApp es una aplicacion web orientada a **Learning Analytics** que transforma una rutina de estudio de vocabulario ingles-espanol en un proceso medible, analizable y reproducible.
 
-El usuario presenta una palabra en espanol, escribe su traduccion en ingles y formula una oracion con ella. La app verifica ambas respuestas usando NLP (spaCy, con Gemini opcional) y aplica el algoritmo **SM-2 de Spaced Repetition** para determinar cuando revisar cada palabra nuevamente.
+El sistema registra cada sesion de practica como datos estructurados —respuestas, calidad, dificultad, tipo y direccion de la sesion, validador utilizado, uso de ayuda y marcas de tiempo— y los transforma en indicadores de rendimiento, comportamiento y carga de aprendizaje.
+
+El proyecto integra el ciclo completo de una solucion de Data Analytics: captura de datos → almacenamiento relacional → transformacion y agregacion → definicion de KPIs → analisis → visualizacion → reporting.
+
+La capa analitica utiliza Python, Pandas y Matplotlib para generar metricas y visualizaciones sobre precision, evolucion del rendimiento, actividad, dificultad de vocabulario y carga futura de repasos. Los resultados se presentan mediante dashboards de seguimiento y un informe consolidado exportable a PDF.
+
+Entre las principales dimensiones analizadas se encuentran:
+
+- **Rendimiento:** precision historica y reciente, puntaje, respuestas correctas y calidad de las practicas.
+- **Segmentacion:** precision por tipo de sesion, direccion de traduccion, nivel de dificultad y fuente de validacion.
+- **Comportamiento:** dias activos, rachas de practica, frecuencia de estudio y uso de ayudas.
+- **Carga de aprendizaje:** palabras nuevas, repasos vencidos, ritmo de practica y proyeccion de repasos mediante SM-2 Spaced Repetition.
+- **Evolucion temporal:** tendencias de rendimiento a 7 y 30 dias, actividad de 16 semanas y repasos programados a 14 dias.
+
+Un aspecto central del proyecto es la integridad y trazabilidad de las metricas. Cada indicador esta documentado con su definicion, formula, fuente de datos y criterio de calculo, evitando interpretaciones ambiguas o metricas infladas. Por ejemplo, las practicas en las que el usuario solicita revelar la respuesta se registran explicitamente mediante `was_revealed`, evitando que la precision sobreestime el rendimiento real.
+
+La aplicacion incorpora tambien NLP con spaCy y validacion opcional mediante Google Gemini, utilizando un mecanismo de fallback automatico para mantener la continuidad de la practica cuando el servicio externo no esta disponible o supera el presupuesto de tiempo configurado.
+
+El algoritmo SM-2 utiliza la calidad de cada respuesta para adaptar los intervalos de revision, permitiendo analizar no solo el rendimiento historico sino tambien la carga futura de aprendizaje.
+
+El proyecto fue desarrollado mediante un flujo de desarrollo agentico con OpenCode, utilizando agentes de IA como apoyo durante la implementacion, pruebas, depuracion y documentacion, mientras se mantuvo control sobre la arquitectura, las metricas, las reglas de negocio y la validacion de los resultados.
+
+En conjunto, VocabApp demuestra como una aplicacion puede convertirse en un producto analitico, donde los datos generados por el uso de la aplicacion alimentan un pipeline reproducible que transforma eventos de usuario en KPIs, insights y reportes para la toma de decisiones.
 
 ---
 
@@ -631,6 +653,11 @@ SOFTWARE.
 
 ---
 
-## Autor
+## 👨‍💻 Author
 
-**guillerdc006** — [GitHub](https://github.com/guillerdc006)
+**Guillermo Dominguez Crespo**
+
+MSc in Information Systems (Data Science) | Electronics Engineer
+
+* LinkedIn: [https://www.linkedin.com](linkedin.com/in/guillermodominguezcrespo)
+* GitHub: [https://github.com](https://github.com/guillerdc006)
