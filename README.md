@@ -48,7 +48,7 @@ El informe tambien se puede descargar como PDF multipagina (`screenshots/demo-in
 ## Caracteristicas
 
 | Funcionalidad | Descripcion |
-|---|---|---|
+|---|---|
 | **Quiz interactivo** | Muestra palabra en espanol → el usuario escribe la traduccion en ingles → escribe una oracion |
 | **Direccion inversa** | Selector espanol→ingles (default) o ingles→espanol; la direccion se guarda y alimenta la precision por direccion |
 | **Ayuda al recordar** | Pista siempre visible (con texto por defecto) y boton "No recuerdo / Ver respuesta" que marca la palabra como fallo honesto (`was_revealed`) |
