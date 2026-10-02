@@ -8,6 +8,8 @@
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
+> **🌐 English version:** [README_EN.md](README_EN.md)
+
 ---
 
 ## Descripcion
@@ -40,13 +42,13 @@ En conjunto, VocabApp demuestra como una aplicacion puede convertirse en un prod
 
 ---
 
-## Key Features
+## Caracteristicas destacadas
 
-- **SM-2 Spaced Repetition** — Words are scheduled for review based on performance. Difficult words appear more often; mastered words are spaced further apart.
-- **NLP Sentence Validation** — spaCy validates that the English word (or multi-word expression) appears in the sentence. Supports single words, lemmas, and complete phrases (e.g. "get lost", "show up on time"). Also validates auxiliary verbs (is/are/was/were/be). Optional **Gemini** (AI) validator with automatic fallback adds suggestions for corrected sentences.
-- **Excel Bulk Import** — Import hundreds of words at once from an `.xlsx` file via the web UI or CLI.
-- **Progress Tracking** — Dashboard, Estadisticas with accuracy metrics, word difficulty levels, session history, and a consolidated server-side report (`/report`) with PDF export.
-- **Fully Local** — Runs on `127.0.0.1:5000`. No cloud, no accounts (the only optional cloud piece is the Gemini validator).
+- **SM-2 Spaced Repetition** — Las palabras se programan para repaso segun el rendimiento: las dificiles aparecen mas seguido y las dominadas se espacian cada vez mas.
+- **Validacion NLP de oraciones** — spaCy verifica que la palabra (o expresion multi-palabra) en ingles aparezca en la oracion. Soporta palabras, inflexiones y frases completas (p. ej. "get lost", "show up on time"), y verbos auxiliares (is/are/was/were/be). El validador **Gemini** (IA) es opcional, con fallback automatico, y aporta sugerencias de oraciones corregidas.
+- **Importacion masiva de Excel** — Importa cientos de palabras de un `.xlsx` desde la web o la CLI.
+- **Seguimiento de progreso** — Dashboard, Estadisticas con metricas de precision, niveles de dificultad, historial de sesiones e informe consolidado en servidor (`/report`) con export PDF.
+- **100% local** — Corre en `127.0.0.1:5000`. Sin nube ni cuentas (la unica pieza opcional en la nube es el validador Gemini).
 
 ---
 
@@ -349,6 +351,7 @@ VocabApp/
 ├── run.py                          # Entry point — inicia Flask en localhost:5000
 ├── requirements.txt                # Dependencias Python
 ├── requirements-dev.txt            # Dependencias de testing (pytest, spaCy model)
+├── README.md / README_EN.md        # Documentacion en espanol e ingles
 ├── setup.sh                        # Script de instalacion automatica
 ├── import_excel.py                 # CLI para importar Excel
 ├── Vocabulary.xlsx                 # Dataset de ejemplo (256 palabras)
