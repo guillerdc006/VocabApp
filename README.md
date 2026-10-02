@@ -28,6 +28,23 @@ El usuario presenta una palabra en espanol, escribe su traduccion en ingles y fo
 
 ---
 
+## Capturas
+
+Vistas principales de la app con datos reales de estudio (regenerables con
+`python3 scripts/take_screenshots.py`):
+
+| Vista | Imagen |
+|---|---|
+| Dashboard (resumen + carga de repaso SM-2) | ![Dashboard](screenshots/01-dashboard.png) |
+| Estadisticas (precision por factor, rachas, historial) | ![Estadisticas](screenshots/03-estadisticas.png) |
+| Informe de progreso (pandas + matplotlib, 5 graficos) | ![Informe](screenshots/04-informe.png) |
+| Quiz con validacion NLP | ![Quiz](screenshots/02-quiz.png) |
+| Vocabulario (CRUD + import/export) | ![Vocabulario](screenshots/05-vocabulario.png) |
+
+El informe tambien se puede descargar como PDF multipagina (`screenshots/demo-informe.pdf` es una muestra generada desde `/report/pdf`).
+
+---
+
 ## Caracteristicas
 
 | Funcionalidad | Descripcion |
@@ -325,8 +342,13 @@ VocabApp/
 ├── migrations/                     # Versionado de esquema (Flask-Migrate/Alembic)
 │   └── versions/                   # 990ceaa573c9, b6ed4e264721, 7b07b91d82c0, ...
 │
+├── screenshots/                    # Capturas para el README (portafolio)
+│   ├── 01-dashboard.png, 03-estadisticas.png, ...
+│   └── demo-informe.pdf
+│
 ├── scripts/
-│   └── backup_db.py                # Backup seguro de la BD (sqlite3.backup)
+│   ├── backup_db.py                # Backup seguro de la BD (sqlite3.backup)
+│   └── take_screenshots.py         # Capturas headless de las vistas (Playwright)
 │
 ├── tests/                          # Suite pytest (BD aislada por test)
 │   ├── conftest.py                 # Fixtures app/cliente + suite sin red
@@ -428,6 +450,26 @@ El flujo completo —captura con SM-2 desde cero, mejora continua del evaluador 
 fallback), rendimiento acotado y reporte autocontenido— muestra como una base de datos de uso
 (SQLite) y un pipeline de analitica (pandas + matplotlib) se combinan en un producto pequeno pero
 completo.
+
+---
+
+## Enfoque de analitica de datos (portfolio)
+
+Este proyecto esta disenado para demostrar **capacidades de analista de datos** aplicadas a un
+producto real, no a un dataset de juguete:
+
+| Habilidad | Donde se demuestra |
+|---|---|
+| **Modelo de datos relacional** | Fact table `session_history` + dimensiones `words` / `word_stats` (ver `Database Schema`): disenar el esquema y mantener consistencia (`SUM(times_practiced)` == sesiones quiz). |
+| **ETL/agregaciones con pandas** | `app/services/reporting.py`: una sola pasada de pandas arma metricas, tablas de rendimiento y distribuciones a partir de SQLite sin duplicar logica. |
+| **Visualizacion con matplotlib** | 5 graficos (precision por dimension, evolucion 30 dias, heatmap de actividad, niveles, skyline de repasos) renderizados en servidor con backend `Agg` y exportados a **PDF multipagina**. |
+| **Metricas bien definidas** | [`MEDICIONES.md`](MEDICIONES.md): cada metrica con su formula exacta, fuente de datos y criterio (evita numeros ambiguos o inflados). |
+| **Datos → decision** | Sec. "Estudio de caso": la cola SM-2 como backlog sostenible, diagnostico de precision por factor (tipo/direccion/validador), retencion espaciada y deteccion de sesgo (`was_revealed`). |
+| **Reproducibilidad** | Todo el tiempo en UTC; el informe lleva marca de generacion para hacer comparables capturas analiticas. |
+| **Testing de datos** | Suite de 118 tests con BD aislada: fixtures, datos sinteticos y verificacion numerica de las agregaciones. |
+
+Si tienes datos tuyos de estudio (o quieres conectar otra app), la capa de analitica es
+independiente de la UI: `analytics.py` y `reporting.py` trabajan solo sobre las tablas.
 
 ---
 
